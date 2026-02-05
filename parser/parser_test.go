@@ -131,7 +131,7 @@ func TestIFElseExpression(t *testing.T) {
 		t.Fatalf("statement is not Expression statement, got %T\n", program.Statements[0])
 	}
 
-	expr, ok := stmt.Expression.(*ast.IFExpression)
+	expr, ok := stmt.Expression.(*ast.IfExpression)
 	if !ok {
 		t.Fatalf("expression is not 'if' expression, got=%T\n", stmt.Expression)
 	}
@@ -180,7 +180,7 @@ func TestIFExpression(t *testing.T) {
 		t.Fatalf("statement is not Expression statement, got %T\n", program.Statements[0])
 	}
 
-	expr, ok := stmt.Expression.(*ast.IFExpression)
+	expr, ok := stmt.Expression.(*ast.IfExpression)
 	if !ok {
 		t.Fatalf("expression is not 'if' expression, got=%T\n", stmt.Expression)
 	}
