@@ -1,6 +1,8 @@
 package evaluator
 
 import (
+	"fmt"
+
 	"github.com/Aergiaaa/idiotic_interpreter/ast"
 	"github.com/Aergiaaa/idiotic_interpreter/object"
 )
@@ -11,67 +13,125 @@ var (
 	FALSE = &object.Bool{Value: false}
 )
 
-func Eval(node ast.Node) object.Object {
+func Eval(node ast.Node, env *object.Environment) object.Object {
 	switch node := node.(type) {
 	case *ast.Program:
-		return evalStatements(node)
+		return evalProgram(node, env)
+	case *ast.Identifier:
+		return evalIdentifier(node, env)
+	case *ast.LetStatement:
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+		env.Set(node.Name.Value, val)
+	case *ast.IfExpression:
+		return evalIfExpr(node, env)
+	case *ast.ReturnStatement:
+		val := Eval(node.ReturnValue, env)
+		if isError(val) {
+			return val
+		}
+
+		return &object.ReturnValue{
+			Value: val,
+		}
+	case *ast.PrefixExpression:
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
+
+		return evalPrefixExpr(node.Operator, right)
+	case *ast.InfixExpression:
+		left := Eval(node.Left, env)
+		if isError(left) {
+			return left
+		}
+
+		right := Eval(node.Right, env)
+		if isError(right) {
+			return right
+		}
+
+		return evalInfixExpr(node.Operator, left, right)
 	case *ast.ExpressionStatement:
-		return Eval(node.Expression)
+		return Eval(node.Expression, env)
+	case *ast.BlockStatement:
+		return evalBlockStatements(node, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
 	case *ast.Boolean:
 		return nativeBoolToBoolObj(node.Value)
-	case *ast.PrefixExpression:
-		right := Eval(node.Right)
-		return evalPrefixExpr(node.Operator, right)
-	case *ast.InfixExpression:
-		left := Eval(node.Left)
-		right := Eval(node.Right)
-		return evalInfixExpr(node.Operator, left, right)
-	case *ast.BlockStatement:
-		return evalBlockStatements(node)
-	case *ast.IfExpression:
-		return evalIfExpr(node)
-	case *ast.ReturnStatement:
-		return &object.ReturnValue{
-			Value: Eval(node.ReturnValue),
-		}
 	}
 	return nil
 }
 
-func evalIfExpr(ie *ast.IfExpression) object.Object {
-	condition := Eval(ie.Condition)
+func newError(format string, a ...any) *object.Error {
+	return &object.Error{
+		Message: fmt.Sprintf(format, a...),
+	}
+}
+
+func isError(obj object.Object) bool {
+	if obj != nil {
+		return obj.Type() == object.ERR_OBJ
+	}
+	return false
+}
+
+func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
+	val, ok := env.Get(node.Value)
+	if !ok {
+		return newError("identifier not found: %s", node.Value)
+	}
+
+	return val
+}
+
+func evalIfExpr(ie *ast.IfExpression, env *object.Environment) object.Object {
+	condition := Eval(ie.Condition, env)
+	if isError(condition) {
+		return condition
+	}
 
 	if isTruthy(condition) {
-		return Eval(ie.Consequence)
+		return Eval(ie.Consequence, env)
 	} else if ie.Alternative != nil {
-		return Eval(ie.Alternative)
+		return Eval(ie.Alternative, env)
 	}
 	return NULL
 
 }
 
-func evalStatements(prog *ast.Program) object.Object {
+func evalProgram(prog *ast.Program, env *object.Environment) object.Object {
 	var res object.Object
-	for _, statement := range prog.Statements {
-		res = Eval(statement)
+	for _, stmt := range prog.Statements {
+		res = Eval(stmt, env)
 
-		if rv, ok := res.(*object.ReturnValue); ok {
-			return rv.Value
-		}
-	}
-	return res
-}
-
-func evalBlockStatements(block *ast.BlockStatement) (res object.Object) {
-	for _, stmt := range block.Statements {
-		res = Eval(stmt)
-
-		if res != nil && res.Type() == object.RET_VAL_OBJ {
+		switch res := res.(type) {
+		case *object.ReturnValue:
+			return res.Value
+		case *object.Error:
 			return res
 		}
 	}
+
+	return res
+}
+
+func evalBlockStatements(block *ast.BlockStatement, env *object.Environment) (res object.Object) {
+	for _, stmt := range block.Statements {
+		res = Eval(stmt, env)
+
+		if res != nil {
+			rt := res.Type()
+			if rt == object.RET_VAL_OBJ || rt == object.ERR_OBJ {
+				return res
+			}
+		}
+	}
+
 	return res
 }
 
@@ -82,8 +142,10 @@ func evalInfixExpr(op string, left, right object.Object) object.Object {
 		return evalIntegInfixExpr(op, left, right)
 	case isSameObjType(l, r, object.BOOL_OBJ):
 		return evalBoolInfixExpr(op, left, right)
+	case left.Type() != right.Type():
+		return newError("type mismatch: %s %s %s", left.Type(), op, right.Type())
 	default:
-		return NULL
+		return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
 	}
 }
 
@@ -98,7 +160,7 @@ func evalPrefixExpr(op string, right object.Object) object.Object {
 	case "-":
 		return evalNegOpExpr(right)
 	default:
-		return NULL
+		return newError("unknown operator: %s%s", op, right.Type())
 	}
 }
 
@@ -128,13 +190,13 @@ func evalIntegInfixExpr(op string, left, right object.Object) object.Object {
 	case "<":
 		return nativeBoolToBoolObj(lVal < rVal)
 	default:
-		return NULL
+		return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
 	}
 }
 
 func evalBoolInfixExpr(op string, left, right object.Object) object.Object {
-	lVal := left.(*object.Integer).Value
-	rVal := right.(*object.Integer).Value
+	lVal := left.(*object.Bool).Value
+	rVal := right.(*object.Bool).Value
 
 	switch op {
 	case "==":
@@ -142,14 +204,14 @@ func evalBoolInfixExpr(op string, left, right object.Object) object.Object {
 	case "!=":
 		return nativeBoolToBoolObj(lVal != rVal)
 	default:
-		return NULL
+		return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
 	}
 
 }
 
 func evalNegOpExpr(right object.Object) object.Object {
 	if right.Type() != object.INTEGER_OBJ {
-		return NULL
+		return newError("unknown operator: -%s", right.Type())
 	}
 
 	val := right.(*object.Integer).Value

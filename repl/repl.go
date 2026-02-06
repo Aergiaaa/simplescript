@@ -7,6 +7,7 @@ import (
 
 	"github.com/Aergiaaa/idiotic_interpreter/evaluator"
 	"github.com/Aergiaaa/idiotic_interpreter/lexer"
+	"github.com/Aergiaaa/idiotic_interpreter/object"
 	"github.com/Aergiaaa/idiotic_interpreter/parser"
 )
 
@@ -14,6 +15,7 @@ const PROMPT = ">>"
 
 func Start(in io.Reader, out io.Writer) {
 	buffer := bufio.NewScanner(in)
+	env := object.InitEnv()
 
 	for {
 		fmt.Printf(PROMPT)
@@ -33,7 +35,7 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		evaled := evaluator.Eval(program)
+		evaled := evaluator.Eval(program, env)
 		if evaled != nil {
 			io.WriteString(out, evaled.Inspect())
 			io.WriteString(out, "\n")
