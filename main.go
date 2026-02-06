@@ -43,7 +43,11 @@ func main() {
 			os.Exit(1)
 		}
 
-		evaluator.Eval(program, env)
+		result := evaluator.Eval(program, env)
+		if result != nil && result.Type() == object.ERR_OBJ {
+			fmt.Fprintf(os.Stderr, "%s\n", result.Inspect())
+			os.Exit(1)
+		}
 		return
 	}
 

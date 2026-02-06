@@ -48,6 +48,8 @@ var builtins = map[string]*object.Builtin{
 			return NULL
 		},
 	},
+
+	// return last piece of array
 	"tail": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
@@ -66,6 +68,8 @@ var builtins = map[string]*object.Builtin{
 			return NULL
 		},
 	},
+
+	// returning its array without the first val
 	"killHead": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 1 {
@@ -90,6 +94,8 @@ var builtins = map[string]*object.Builtin{
 			return NULL
 		},
 	},
+
+	// return array with added piece at the end
 	"push": {
 		Fn: func(args ...object.Object) object.Object {
 			if len(args) != 2 {
@@ -112,6 +118,8 @@ var builtins = map[string]*object.Builtin{
 			}
 		},
 	},
+
+	// print
 	"puts": {
 		Fn: func(args ...object.Object) object.Object {
 			for _, arg := range args {
