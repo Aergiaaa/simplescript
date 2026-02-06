@@ -6,11 +6,11 @@ import (
 	"os/user"
 	"path/filepath"
 
-	"github.com/Aergiaaa/idiotic_interpreter/evaluator"
-	"github.com/Aergiaaa/idiotic_interpreter/lexer"
-	"github.com/Aergiaaa/idiotic_interpreter/object"
-	"github.com/Aergiaaa/idiotic_interpreter/parser"
-	"github.com/Aergiaaa/idiotic_interpreter/repl"
+	"github.com/Aergiaaa/simplescript/evaluator"
+	"github.com/Aergiaaa/simplescript/lexer"
+	"github.com/Aergiaaa/simplescript/object"
+	"github.com/Aergiaaa/simplescript/parser"
+	"github.com/Aergiaaa/simplescript/repl"
 )
 
 func main() {
@@ -18,8 +18,8 @@ func main() {
 		filename := os.Args[2]
 
 		// check the extension
-		if filepath.Ext(filename) != ".il" {
-			fmt.Fprintf(os.Stderr, "Error file must have .il extension\n")
+		if filepath.Ext(filename) != ".simp" {
+			fmt.Fprintf(os.Stderr, "Error file must have .simp extension\n")
 			os.Exit(1)
 		}
 

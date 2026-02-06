@@ -3,9 +3,9 @@ package evaluator
 import (
 	"testing"
 
-	"github.com/Aergiaaa/idiotic_interpreter/lexer"
-	"github.com/Aergiaaa/idiotic_interpreter/object"
-	"github.com/Aergiaaa/idiotic_interpreter/parser"
+	"github.com/Aergiaaa/simplescript/lexer"
+	"github.com/Aergiaaa/simplescript/object"
+	"github.com/Aergiaaa/simplescript/parser"
 )
 
 func TestHashIndexExpressions(t *testing.T) {

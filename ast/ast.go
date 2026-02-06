@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"strings"
 
-	"github.com/Aergiaaa/idiotic_interpreter/token"
+	"github.com/Aergiaaa/simplescript/token"
 )
 
 type Node interface {

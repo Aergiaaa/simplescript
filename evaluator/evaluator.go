@@ -3,8 +3,8 @@ package evaluator
 import (
 	"fmt"
 
-	"github.com/Aergiaaa/idiotic_interpreter/ast"
-	"github.com/Aergiaaa/idiotic_interpreter/object"
+	"github.com/Aergiaaa/simplescript/ast"
+	"github.com/Aergiaaa/simplescript/object"
 )
 
 var (

@@ -5,10 +5,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/Aergiaaa/idiotic_interpreter/evaluator"
-	"github.com/Aergiaaa/idiotic_interpreter/lexer"
-	"github.com/Aergiaaa/idiotic_interpreter/object"
-	"github.com/Aergiaaa/idiotic_interpreter/parser"
+	"github.com/Aergiaaa/simplescript/evaluator"
+	"github.com/Aergiaaa/simplescript/lexer"
+	"github.com/Aergiaaa/simplescript/object"
+	"github.com/Aergiaaa/simplescript/parser"
 )
 
 const PROMPT = ">>"

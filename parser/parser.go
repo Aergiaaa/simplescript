@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/Aergiaaa/idiotic_interpreter/ast"
-	"github.com/Aergiaaa/idiotic_interpreter/lexer"
-	"github.com/Aergiaaa/idiotic_interpreter/token"
+	"github.com/Aergiaaa/simplescript/ast"
+	"github.com/Aergiaaa/simplescript/lexer"
+	"github.com/Aergiaaa/simplescript/token"
 )
 
 // token Hierarchy

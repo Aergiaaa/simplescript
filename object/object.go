@@ -6,7 +6,7 @@ import (
 	"hash/fnv"
 	"strings"
 
-	"github.com/Aergiaaa/idiotic_interpreter/ast"
+	"github.com/Aergiaaa/simplescript/ast"
 )
 
 type ObjectType string

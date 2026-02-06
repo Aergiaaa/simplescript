@@ -1,6 +1,6 @@
 package lexer
 
-import "github.com/Aergiaaa/idiotic_interpreter/token"
+import "github.com/Aergiaaa/simplescript/token"
 
 type Lexer struct {
 	input        string
