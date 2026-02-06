@@ -8,6 +8,118 @@ import (
 	"github.com/Aergiaaa/idiotic_interpreter/parser"
 )
 
+func TestStringConcatenationError(t *testing.T) {
+	input := `"Hello" + " " + "World""!"`
+
+	evaluated := testEval(input)
+
+	errObj, ok := evaluated.(*object.Error)
+	if !ok {
+		t.Fatalf("object is not Error. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if errObj.Message == "" {
+		t.Errorf("Expected error message for malformed string syntax")
+	}
+}
+
+func TestStringConcatenation(t *testing.T) {
+	input := `"Hello" + " " + "World!"`
+
+	evaluated := testEval(input)
+
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Errorf("String has wrong value. got=%q", str.Value)
+	}
+}
+
+func TestStringLiteral(t *testing.T) {
+	input := `"Hello World!"`
+
+	evaluated := testEval(input)
+	str, ok := evaluated.(*object.String)
+	if !ok {
+		t.Fatalf("object is not String. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if str.Value != "Hello World!" {
+		t.Errorf("String has wrong value. got=%q", str.Value)
+	}
+}
+
+func TestIfInsideFunc(t *testing.T) {
+	input := `
+	let sub = ft(x,y) {
+		if (y == 0) {
+			return x + x;
+		} else {
+			return x - y;
+		}
+	};
+
+	sub(1,0)
+	`
+
+	testIntegerObject(t, testEval(input), 2)
+}
+
+func TestClosures(t *testing.T) {
+	input := `
+		let newAdder = ft(x) {
+			ft(y) { x + y };
+		};
+		let addTwo = newAdder(2);
+		addTwo(2);`
+
+	testIntegerObject(t, testEval(input), 4)
+}
+
+func TestFunctionApplication(t *testing.T) {
+	tests := []struct {
+		input    string
+		expected int64
+	}{
+		{"let identity = ft(x) { x; }; identity(5);", 5},
+		{"let identity = ft(x) { return x; }; identity(5);", 5},
+		{"let double = ft(x) { x * 2; }; double(5);", 10},
+		{"let add = ft(x, y) { x + y; }; add(5, 5);", 10},
+		{"let add = ft(x, y) { x + y; }; add(5 + 5, add(5, 5));", 20},
+		{"ft(x) { x; }(5)", 5},
+	}
+	for _, tt := range tests {
+		testIntegerObject(t, testEval(tt.input), tt.expected)
+	}
+}
+
+func TestFunctionObject(t *testing.T) {
+	input := "ft(x) { x + 2; };"
+
+	evaluated := testEval(input)
+	ft, ok := evaluated.(*object.Function)
+	if !ok {
+		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
+	}
+
+	if len(ft.Parameters) != 1 {
+		t.Fatalf("function has wrong parameters. Parameters=%+v",
+			ft.Parameters)
+	}
+
+	if ft.Parameters[0].String() != "x" {
+		t.Fatalf("parameter is not 'x'. got=%q", ft.Parameters[0])
+	}
+
+	expectedBody := "(x + 2)"
+	if ft.Body.String() != expectedBody {
+		t.Fatalf("body is not %q. got=%q", expectedBody, ft.Body.String())
+	}
+}
+
 func TestLetStatements(t *testing.T) {
 	tests := []struct {
 		input    string
@@ -29,6 +141,10 @@ func TestErrorHandling(t *testing.T) {
 		input           string
 		expectedMessage string
 	}{
+		{
+			`"Hello" - "World"`,
+			"unknown operator: STRING - STRING",
+		},
 		{
 			"foobar",
 			"identifier not found: foobar",
@@ -212,6 +328,13 @@ func testEval(input string) object.Object {
 	l := lexer.InitLexer(input)
 	p := parser.InitParser(l)
 	program := p.Parse()
+
+	if len(p.Errors()) > 0 {
+		return &object.Error{
+			Message: p.Errors()[0],
+		}
+	}
+
 	env := object.InitEnv()
 
 	return Eval(program, env)

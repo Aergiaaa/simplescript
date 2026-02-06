@@ -44,7 +44,7 @@ func TestNextTokenIdent(t *testing.T) {
 	inp := `let five = 5;
 	let ten = 10;
 
-	let add = fn(x,y){
+	let add = ft(x,y){
 		x + y;
 	};
 
@@ -62,6 +62,9 @@ func TestNextTokenIdent(t *testing.T) {
 	==
 	>=
 	<=
+
+	"foo"
+	"bar foo"
 	 `
 
 	tests := []struct {
@@ -81,7 +84,7 @@ func TestNextTokenIdent(t *testing.T) {
 		{token.LET, "let"},
 		{token.IDENT, "add"},
 		{token.ASSIGN, "="},
-		{token.FUNC, "fn"},
+		{token.FUNC, "ft"},
 		{token.LPAREN, "("},
 		{token.IDENT, "x"},
 		{token.COMMA, ","},
@@ -121,6 +124,8 @@ func TestNextTokenIdent(t *testing.T) {
 		{token.EQ, "=="},
 		{token.GTE, ">="},
 		{token.LTE, "<="},
+		{token.STRING, "foo"},
+		{token.STRING, "bar foo"},
 		{token.EOF, ""},
 	}
 

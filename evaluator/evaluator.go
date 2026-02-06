@@ -25,6 +25,24 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return val
 		}
 		env.Set(node.Name.Value, val)
+	case *ast.FunctionLiteral:
+		return &object.Function{
+			Parameters: node.Parameters,
+			Body:       node.Body,
+			Env:        env,
+		}
+	case *ast.CallExpression:
+		f := Eval(node.Func, env)
+		if isError(f) {
+			return f
+		}
+
+		args := evalExprs(node.Args, env)
+		if len(args) == 1 && isError(args[0]) {
+			return args[0]
+		}
+
+		return applyFunc(f, args)
 	case *ast.IfExpression:
 		return evalIfExpr(node, env)
 	case *ast.ReturnStatement:
@@ -54,6 +72,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return right
 		}
 
+		if left == nil || right == nil {
+			return NULL
+		}
+
 		return evalInfixExpr(node.Operator, left, right)
 	case *ast.ExpressionStatement:
 		return Eval(node.Expression, env)
@@ -61,6 +83,8 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalBlockStatements(node, env)
 	case *ast.IntegerLiteral:
 		return &object.Integer{Value: node.Value}
+	case *ast.StringLiteral:
+		return &object.String{Value: node.Value}
 	case *ast.Boolean:
 		return nativeBoolToBoolObj(node.Value)
 	}
@@ -78,6 +102,51 @@ func isError(obj object.Object) bool {
 		return obj.Type() == object.ERR_OBJ
 	}
 	return false
+}
+
+func applyFunc(fn object.Object, args []object.Object) object.Object {
+	f, ok := fn.(*object.Function)
+	if !ok {
+		return newError("not a function: %s", fn.Type())
+	}
+
+	extEnv := extFuncEnv(f, args)
+	evaled := Eval(f.Body, extEnv)
+
+	return unwrapReturnVal(evaled)
+}
+
+func extFuncEnv(f *object.Function, args []object.Object) *object.Environment {
+	env := object.InitEnclosedEnv(f.Env)
+
+	for i, param := range f.Parameters {
+		env.Set(param.Value, args[i])
+	}
+
+	return env
+}
+
+func unwrapReturnVal(obj object.Object) object.Object {
+	if retVal, ok := obj.(*object.ReturnValue); ok {
+		return retVal.Value
+	}
+
+	return obj
+}
+
+func evalExprs(exprs []ast.Expression, env *object.Environment) []object.Object {
+	var res []object.Object
+
+	for _, e := range exprs {
+		evaled := Eval(e, env)
+		if isError(evaled) {
+			return []object.Object{evaled}
+		}
+
+		res = append(res, evaled)
+	}
+
+	return res
 }
 
 func evalIdentifier(node *ast.Identifier, env *object.Environment) object.Object {
@@ -142,6 +211,8 @@ func evalInfixExpr(op string, left, right object.Object) object.Object {
 		return evalIntegInfixExpr(op, left, right)
 	case isSameObjType(l, r, object.BOOL_OBJ):
 		return evalBoolInfixExpr(op, left, right)
+	case isSameObjType(l, r, object.STRING_OBJ):
+		return evalStringInfixExpr(op, left, right)
 	case left.Type() != right.Type():
 		return newError("type mismatch: %s %s %s", left.Type(), op, right.Type())
 	default:
@@ -191,6 +262,19 @@ func evalIntegInfixExpr(op string, left, right object.Object) object.Object {
 		return nativeBoolToBoolObj(lVal < rVal)
 	default:
 		return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
+	}
+}
+
+func evalStringInfixExpr(op string, left, right object.Object) object.Object {
+	if op != "+" {
+		return newError("unknown operator: %s %s %s", left.Type(), op, right.Type())
+	}
+
+	lVal := left.(*object.String).Value
+	rVal := right.(*object.String).Value
+
+	return &object.String{
+		Value: lVal + rVal,
 	}
 }
 

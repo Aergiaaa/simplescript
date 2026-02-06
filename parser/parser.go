@@ -67,6 +67,7 @@ func InitParser(l *lexer.Lexer) *Parser {
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 
 	p.registerPrefix(token.INT, p.parseIntegerlLiteral)
+	p.registerPrefix(token.STRING, p.parseStringLiteral)
 
 	p.registerPrefix(token.BANG, p.parsePrefixExpression)
 	p.registerPrefix(token.MINUS, p.parsePrefixExpression)
@@ -193,16 +194,24 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 	stmt := &ast.ReturnStatement{
 		Token: p.currToken,
 	}
-
 	p.nextToken()
 
-	stmt.ReturnValue = p.parseExpression(LOWEST)
+	if !p.currTokenIs(token.SEMICOLON) {
+		stmt.ReturnValue = p.parseExpression(LOWEST)
+	}
 
-	if p.currTokenIs(token.SEMICOLON) {
+	if p.peekTokenIs(token.SEMICOLON) {
 		p.nextToken()
 	}
 
 	return stmt
+}
+
+func (p *Parser) parseStringLiteral() ast.Expression {
+	return &ast.StringLiteral{
+		Token: p.currToken,
+		Value: p.currToken.Literal,
+	}
 }
 
 func (p *Parser) parseIntegerlLiteral() ast.Expression {
@@ -427,6 +436,11 @@ func (p *Parser) parseExpression(h Hierarchy) ast.Expression {
 	}
 
 	outExpr := prefix()
+
+	if p.currToken.Type == token.STRING && p.peekToken.Type == token.STRING {
+		p.errors = append(p.errors, "unexpected string literal after string")
+		return nil
+	}
 
 	for !p.peekTokenIs(token.SEMICOLON) && h < p.peekHierarchy() {
 		infix := p.infixParseFns[p.peekToken.Type]
