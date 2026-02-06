@@ -35,6 +35,11 @@ const (
 	LBRACE = "{"
 	RBRACE = "}"
 
+	LBRACKET = "["
+	RBRACKET = "]"
+
+	COLON = ":"
+
 	// keyword
 	FUNC   = "FUNCTION"
 	LET    = "LET"

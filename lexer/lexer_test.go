@@ -65,6 +65,10 @@ func TestNextTokenIdent(t *testing.T) {
 
 	"foo"
 	"bar foo"
+
+	[1,2];
+
+	{"foo": "bar"}
 	 `
 
 	tests := []struct {
@@ -126,6 +130,17 @@ func TestNextTokenIdent(t *testing.T) {
 		{token.LTE, "<="},
 		{token.STRING, "foo"},
 		{token.STRING, "bar foo"},
+		{token.LBRACKET, "["},
+		{token.INT, "1"},
+		{token.COMMA, ","},
+		{token.INT, "2"},
+		{token.RBRACKET, "]"},
+		{token.SEMICOLON, ";"},
+		{token.LBRACE, "{"},
+		{token.STRING, "foo"},
+		{token.COLON, ":"},
+		{token.STRING, "bar"},
+		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}
 

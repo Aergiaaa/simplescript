@@ -150,15 +150,6 @@ func (bs *BlockStatement) String() string {
 	return output.String()
 }
 
-type Boolean struct {
-	Token token.Token
-	Value bool
-}
-
-func (b *Boolean) expressionNode()      {}
-func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
-func (b *Boolean) String() string       { return b.Token.Literal }
-
 type CallExpression struct {
 	Token token.Token // should be '(' because at i.e add(1,2), the 'add' identifier already consumed
 	Func  Expression  // Identifier or Func Literal
@@ -208,6 +199,70 @@ func (fl *FunctionLiteral) String() string {
 	return output.String()
 }
 
+type HashLiteral struct {
+	Token token.Token // should be `{`
+	Pairs map[Expression]Expression
+}
+
+func (hl *HashLiteral) expressionNode()      {}
+func (hl *HashLiteral) TokenLiteral() string { return hl.Token.Literal }
+func (hl *HashLiteral) String() string {
+	var output bytes.Buffer
+
+	var pairs []string
+	for key, value := range hl.Pairs {
+		pairs = append(pairs, key.String()+":"+value.String())
+	}
+
+	output.WriteString("{")
+	output.WriteString(strings.Join(pairs, ", "))
+	output.WriteString("}")
+
+	return output.String()
+}
+
+type ArrayLiteral struct {
+	Token token.Token // should be `[`
+	Elems []Expression
+}
+
+func (al *ArrayLiteral) expressionNode()      {}
+func (al *ArrayLiteral) TokenLiteral() string { return al.Token.Literal }
+func (al *ArrayLiteral) String() string {
+	var output bytes.Buffer
+
+	var elems []string
+	for _, elem := range al.Elems {
+		elems = append(elems, elem.String())
+	}
+
+	output.WriteString("[")
+	output.WriteString(strings.Join(elems, ", "))
+	output.WriteString("]")
+
+	return output.String()
+}
+
+type IndexExpression struct {
+	Token token.Token // should be `[` too
+	Left  Expression
+	Index Expression
+}
+
+func (ie *IndexExpression) expressionNode()      {}
+func (ie *IndexExpression) TokenLiteral() string { return ie.Token.Literal }
+func (ie *IndexExpression) String() string {
+	var output bytes.Buffer
+
+	output.WriteString("(")
+	output.WriteString(ie.Left.String())
+	output.WriteString("[")
+	output.WriteString(ie.Index.String())
+	output.WriteString("])")
+
+	return output.String()
+}
+
 type StringLiteral struct {
 	Token token.Token
 	Value string
@@ -225,6 +280,15 @@ type IntegerLiteral struct {
 func (il *IntegerLiteral) expressionNode()      {}
 func (il *IntegerLiteral) TokenLiteral() string { return il.Token.Literal }
 func (il *IntegerLiteral) String() string       { return il.Token.Literal }
+
+type Boolean struct {
+	Token token.Token
+	Value bool
+}
+
+func (b *Boolean) expressionNode()      {}
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+func (b *Boolean) String() string       { return b.Token.Literal }
 
 type PrefixExpression struct {
 	Token    token.Token

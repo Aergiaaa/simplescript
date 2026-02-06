@@ -3,6 +3,7 @@ package object
 import (
 	"bytes"
 	"fmt"
+	"hash/fnv"
 	"strings"
 
 	"github.com/Aergiaaa/idiotic_interpreter/ast"
@@ -18,12 +19,24 @@ const (
 	INTEGER_OBJ = "INTEGER"
 	BOOL_OBJ    = "BOOL"
 	STRING_OBJ  = "STRING"
+	ARR_OBJ     = "ARRAY"
+	HASH_OBJ    = "HASH"
+	BUILTIN_OBJ = "BUILTIN"
 )
 
 type Object interface {
 	Type() ObjectType
 	Inspect() string
 }
+
+type BuiltinFn func(args ...Object) Object
+
+type Builtin struct {
+	Fn BuiltinFn
+}
+
+func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
+func (b *Builtin) Inspect() string  { return "builtin function" }
 
 type Null struct{}
 
@@ -70,6 +83,92 @@ type ReturnValue struct {
 
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 func (rv *ReturnValue) Type() ObjectType { return RET_VAL_OBJ }
+
+type Hash struct {
+	Pairs map[HashKey]HashPair
+}
+
+func (h *Hash) Type() ObjectType { return HASH_OBJ }
+func (h *Hash) Inspect() string {
+	var output bytes.Buffer
+
+	var pairs []string
+	for _, pair := range h.Pairs {
+		pairs = append(pairs, fmt.Sprintf("%s: %s", pair.Key.Inspect(), pair.Val.Inspect()))
+	}
+
+	output.WriteString("{")
+	output.WriteString(strings.Join(pairs, ", "))
+	output.WriteString("}")
+
+	return output.String()
+}
+
+type Hashable interface {
+	HashKey() HashKey
+}
+
+type HashPair struct {
+	Key Object
+	Val Object
+}
+
+type HashKey struct {
+	Type  ObjectType
+	Value uint64
+}
+
+func (i *Integer) HashKey() HashKey {
+	return HashKey{
+		Type:  i.Type(),
+		Value: uint64(i.Value),
+	}
+}
+
+func (b *Bool) HashKey() HashKey {
+	var val uint64
+
+	if b.Value {
+		val = 1
+	} else {
+		val = 0
+	}
+
+	return HashKey{
+		Type:  b.Type(),
+		Value: val,
+	}
+}
+
+func (s *String) HashKey() HashKey {
+	h := fnv.New64a()
+	h.Write([]byte(s.Value))
+
+	return HashKey{
+		Type:  s.Type(),
+		Value: h.Sum64(),
+	}
+}
+
+type Array struct {
+	Elems []Object
+}
+
+func (a *Array) Type() ObjectType { return ARR_OBJ }
+func (a *Array) Inspect() string {
+	var output bytes.Buffer
+
+	var elems []string
+	for _, e := range a.Elems {
+		elems = append(elems, e.Inspect())
+	}
+
+	output.WriteString("[")
+	output.WriteString(strings.Join(elems, ", "))
+	output.WriteString("]")
+
+	return output.String()
+}
 
 type String struct {
 	Value string
