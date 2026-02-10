@@ -3,6 +3,7 @@ package evaluator
 import (
 	"testing"
 
+	"github.com/Aergiaaa/simplescript/ast"
 	"github.com/Aergiaaa/simplescript/lexer"
 	"github.com/Aergiaaa/simplescript/object"
 	"github.com/Aergiaaa/simplescript/parser"
@@ -305,13 +306,13 @@ func TestFunctionObject(t *testing.T) {
 		t.Fatalf("object is not Function. got=%T (%+v)", evaluated, evaluated)
 	}
 
-	if len(ft.Parameters) != 1 {
+	if len(ft.Params) != 1 {
 		t.Fatalf("function has wrong parameters. Parameters=%+v",
-			ft.Parameters)
+			ft.Params)
 	}
 
-	if ft.Parameters[0].String() != "x" {
-		t.Fatalf("parameter is not 'x'. got=%q", ft.Parameters[0])
+	if ft.Params[0].String() != "x" {
+		t.Fatalf("parameter is not 'x'. got=%q", ft.Params[0])
 	}
 
 	expectedBody := "(x + 2)"
@@ -594,4 +595,10 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 		return false
 	}
 	return true
+}
+
+func testParseProgram(input string) *ast.Program {
+	l := lexer.InitLexer(input)
+	p := parser.InitParser(l)
+	return p.Parse()
 }

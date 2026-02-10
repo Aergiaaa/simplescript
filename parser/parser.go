@@ -88,6 +88,8 @@ func InitParser(l *lexer.Lexer) *Parser {
 
 	p.registerPrefix(token.FUNC, p.parseFuncLiteral)
 
+	p.registerPrefix(token.MACRO, p.parseMacroLiteral)
+
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
@@ -324,6 +326,28 @@ func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
 	return idx
 }
 
+func (p *Parser) parseMacroLiteral() ast.Expression {
+	lit := &ast.MacroLiteral{
+		Token: p.currToken,
+	}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+
+	lit.Parameters = p.parseFuncParams()
+
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+
+	lit.Body = p.parseBlockStatement()
+
+	return lit
+}
+
 func (p *Parser) parseFuncLiteral() ast.Expression {
 	lit := &ast.FunctionLiteral{
 		Token: p.currToken,
@@ -391,7 +415,7 @@ func (p *Parser) parseForExpression() ast.Expression {
 	}
 	p.nextToken()
 
-	if !p.expectPeek(token.RPAREN) {
+	if !p.peekTokenIs(token.RPAREN) {
 		p.nextToken()
 		expr.Condition = p.parseExpression(LOWEST)
 	}

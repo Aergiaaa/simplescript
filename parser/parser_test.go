@@ -8,6 +8,110 @@ import (
 	"github.com/Aergiaaa/simplescript/lexer"
 )
 
+func TestMacroLiteralParsing(t *testing.T) {
+	input := `macro(x, y) { x + y; }`
+
+	l := lexer.InitLexer(input)
+	p := InitParser(l)
+	program := p.Parse()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
+			1, len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("statement is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	macro, ok := stmt.Expression.(*ast.MacroLiteral)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.MacroLiteral. got=%T",
+			stmt.Expression)
+	}
+
+	if len(macro.Parameters) != 2 {
+		t.Fatalf("macro literal parameters wrong. want 2, got=%d\n",
+			len(macro.Parameters))
+	}
+
+	testLiteralExpression(t, macro.Parameters[0], "x")
+	testLiteralExpression(t, macro.Parameters[1], "y")
+
+	if len(macro.Body.Statements) != 1 {
+		t.Fatalf("macro.Body.Statements has not 1 statements. got=%d\n",
+			len(macro.Body.Statements))
+	}
+
+	bodyStmt, ok := macro.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("macro body stmt is not ast.ExpressionStatement. got=%T",
+			macro.Body.Statements[0])
+	}
+
+	testInfixExpression(t, bodyStmt.Expression,  "+", "x","y")
+}
+
+func TestEmptyForLoop(t *testing.T) {
+	input := `
+	for(){
+		x = x+1;
+	}
+	`
+
+	l := lexer.InitLexer(input)
+	p := InitParser(l)
+	program := p.Parse()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program statement doesnt contain 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	forExpr, ok := stmt.Expression.(*ast.ForExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.ForExpression. got=%T", stmt.Expression)
+	}
+
+	if forExpr.Condition != nil {
+		t.Fatalf("forExpr.Condition is not nil, got=%q", forExpr.Condition.String())
+	}
+
+	if len(forExpr.Body.Statements) != 1 {
+		t.Fatalf("forExpr.Body.Statements has not 1 statement. got=%d",
+			len(forExpr.Body.Statements))
+	}
+
+	bodyStmt, ok := forExpr.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("for body statement is not ast.ExpressionStatement. got=%T",
+			forExpr.Body.Statements[0])
+	}
+
+	assignExpr, ok := bodyStmt.Expression.(*ast.AssignmentExpression)
+	if !ok {
+		t.Fatalf("body expression is not ast.AssignmentExpression. got=%T",
+			bodyStmt.Expression)
+	}
+
+	if !testIdentifier(t, assignExpr.Name, "x") {
+		return
+	}
+
+	if !testInfixExpression(t, assignExpr.Val, "+", "x", 1) {
+		return
+	}
+}
+
 func TestForLoop(t *testing.T) {
 	input := `
 	for (x < 5) {
@@ -699,7 +803,7 @@ func TestIntegralLiteralExpression(t *testing.T) {
 
 	literal, ok := exprStmt.Expression.(*ast.IntegerLiteral)
 	if !ok {
-		t.Fatalf("expr is not IntegralLiteral, got=%T", exprStmt.Expression)
+		t.Fatalf("expr is not IntegerLiteral, got=%T", exprStmt.Expression)
 	}
 
 	if literal.Value != 5 {

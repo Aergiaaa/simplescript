@@ -22,6 +22,8 @@ const (
 	STRING_OBJ  = "STRING"
 	ARR_OBJ     = "ARRAY"
 	HASH_OBJ    = "HASH"
+	QUOTE_OBJ   = "QUOTE"
+	MACRO_OBJ   = "MACRO"
 	BUILTIN_OBJ = "BUILTIN"
 )
 
@@ -39,6 +41,41 @@ type Builtin struct {
 func (b *Builtin) Type() ObjectType { return BUILTIN_OBJ }
 func (b *Builtin) Inspect() string  { return "builtin function" }
 
+type Macro struct {
+	Params []*ast.Identifier
+	Body   *ast.BlockStatement
+	Env    *Environment
+}
+
+func (m *Macro) Type() ObjectType { return MACRO_OBJ }
+func (m *Macro) Inspect() string {
+	var out bytes.Buffer
+
+	params := []string{}
+	for _, p := range m.Params {
+		params = append(params, p.String())
+	}
+
+	out.WriteString("macro")
+	out.WriteString("(")
+	out.WriteString(strings.Join(params, ", "))
+	out.WriteString(") {\n")
+	out.WriteString(m.Body.String())
+	out.WriteString("\n}")
+
+	return out.String()
+}
+
+type Quote struct {
+	Node ast.Node
+}
+
+func (q *Quote) Type() ObjectType { return QUOTE_OBJ }
+func (q *Quote) Inspect() string {
+
+	return "QUOTE(" + q.Node.String() + ")"
+}
+
 type Null struct{}
 
 func (n *Null) Inspect() string  { return "null" }
@@ -52,7 +89,7 @@ func (e *Error) Inspect() string  { return "ERROR: " + e.Message }
 func (e *Error) Type() ObjectType { return ERR_OBJ }
 
 type Function struct {
-	Parameters []*ast.Identifier
+	Params []*ast.Identifier
 	Body       *ast.BlockStatement
 	Env        *Environment
 }
@@ -61,7 +98,7 @@ func (f *Function) Inspect() string {
 	var output bytes.Buffer
 
 	var params []string
-	for _, p := range f.Parameters {
+	for _, p := range f.Params {
 		params = append(params, p.String())
 	}
 
@@ -89,6 +126,47 @@ type Break struct{}
 
 func (b *Break) Inspect() string  { return "break" }
 func (b *Break) Type() ObjectType { return BREAK_OBJ }
+
+type String struct {
+	Value string
+}
+
+func (s *String) Inspect() string  { return s.Value }
+func (s *String) Type() ObjectType { return STRING_OBJ }
+
+type Integer struct {
+	Value int64
+}
+
+func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
+func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
+
+type Bool struct {
+	Value bool
+}
+
+func (b *Bool) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
+func (b *Bool) Type() ObjectType { return BOOL_OBJ }
+
+type Array struct {
+	Elems []Object
+}
+
+func (a *Array) Type() ObjectType { return ARR_OBJ }
+func (a *Array) Inspect() string {
+	var output bytes.Buffer
+
+	var elems []string
+	for _, e := range a.Elems {
+		elems = append(elems, e.Inspect())
+	}
+
+	output.WriteString("[")
+	output.WriteString(strings.Join(elems, ", "))
+	output.WriteString("]")
+
+	return output.String()
+}
 
 type Hash struct {
 	Pairs map[HashKey]HashPair
@@ -155,44 +233,3 @@ func (s *String) HashKey() HashKey {
 		Value: h.Sum64(),
 	}
 }
-
-type Array struct {
-	Elems []Object
-}
-
-func (a *Array) Type() ObjectType { return ARR_OBJ }
-func (a *Array) Inspect() string {
-	var output bytes.Buffer
-
-	var elems []string
-	for _, e := range a.Elems {
-		elems = append(elems, e.Inspect())
-	}
-
-	output.WriteString("[")
-	output.WriteString(strings.Join(elems, ", "))
-	output.WriteString("]")
-
-	return output.String()
-}
-
-type String struct {
-	Value string
-}
-
-func (s *String) Inspect() string  { return s.Value }
-func (s *String) Type() ObjectType { return STRING_OBJ }
-
-type Integer struct {
-	Value int64
-}
-
-func (i *Integer) Inspect() string  { return fmt.Sprintf("%d", i.Value) }
-func (i *Integer) Type() ObjectType { return INTEGER_OBJ }
-
-type Bool struct {
-	Value bool
-}
-
-func (b *Bool) Inspect() string  { return fmt.Sprintf("%t", b.Value) }
-func (b *Bool) Type() ObjectType { return BOOL_OBJ }

@@ -39,7 +39,7 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		env.Set(node.Name.Value, val)
 	case *ast.FunctionLiteral:
 		return &object.Function{
-			Parameters: node.Parameters,
+			Params: node.Parameters,
 			Body:       node.Body,
 			Env:        env,
 		}
@@ -68,6 +68,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 	case *ast.HashLiteral:
 		return evalHashLiteral(node, env)
 	case *ast.CallExpression:
+		if node.Func.TokenLiteral() == "quote" {
+			return quote(node.Args[0], env)
+		}
+
 		f := Eval(node.Func, env)
 		if isError(f) {
 			return f
@@ -163,7 +167,7 @@ func applyFunc(fn object.Object, args []object.Object) object.Object {
 func extFuncEnv(f *object.Function, args []object.Object) *object.Environment {
 	env := object.InitEnclosedEnv(f.Env)
 
-	for i, param := range f.Parameters {
+	for i, param := range f.Params {
 		env.Set(param.Value, args[i])
 	}
 
@@ -299,7 +303,6 @@ func evalForExpr(fe *ast.ForExpression, env *object.Environment) object.Object {
 		return condition
 	}
 
-	// TODO: how to loop over truth condition
 	for isTruthy(condition) {
 		// exec body
 		res := Eval(fe.Body, env)
@@ -336,22 +339,6 @@ func evalIfExpr(ie *ast.IfExpression, env *object.Environment) object.Object {
 	}
 	return NULL
 
-}
-
-func evalProgram(prog *ast.Program, env *object.Environment) object.Object {
-	var res object.Object
-	for _, stmt := range prog.Statements {
-		res = Eval(stmt, env)
-
-		switch res := res.(type) {
-		case *object.ReturnValue:
-			return res.Value
-		case *object.Error:
-			return res
-		}
-	}
-
-	return res
 }
 
 func evalBlockStatements(block *ast.BlockStatement, env *object.Environment) (res object.Object) {

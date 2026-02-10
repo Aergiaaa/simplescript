@@ -56,6 +56,7 @@ const (
 	RETURN = "RETURN"
 	FOR    = "FOR"
 	BREAK  = "BREAK"
+	MACRO  = "MACRO"
 )
 
 type TokenType string
@@ -90,4 +91,5 @@ var keyword = map[string]TokenType{
 	"return": RETURN,
 	"for":    FOR,
 	"break":  BREAK,
+	"macro":  MACRO,
 }

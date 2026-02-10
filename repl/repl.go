@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/Aergiaaa/simplescript/evaluator"
 	"github.com/Aergiaaa/simplescript/lexer"
@@ -16,6 +17,7 @@ const PROMPT = ">>"
 func Start(in io.Reader, out io.Writer) {
 	buffer := bufio.NewScanner(in)
 	env := object.InitEnv()
+	macroEnv := object.InitEnv()
 
 	for {
 		fmt.Printf(PROMPT)
@@ -26,6 +28,18 @@ func Start(in io.Reader, out io.Writer) {
 		}
 
 		line := buffer.Text()
+
+		for strings.HasSuffix(line, "\\") {
+			line = strings.TrimSuffix(line, "\\")
+			fmt.Printf("..")
+
+			if !buffer.Scan() {
+				return
+			}
+
+			line += "\n" + buffer.Text()
+		}
+
 		l := lexer.InitLexer(line)
 		p := parser.InitParser(l)
 
@@ -35,7 +49,14 @@ func Start(in io.Reader, out io.Writer) {
 			continue
 		}
 
-		evaled := evaluator.Eval(program, env)
+		evaluator.DefineMacros(program, macroEnv)
+		expanded, err := evaluator.ExpandMacros(program, macroEnv)
+		if err != nil {
+			io.WriteString(out, err.Error())
+			io.WriteString(out, "\n")
+		}
+
+		evaled := evaluator.Eval(expanded, env)
 		if evaled != nil {
 			io.WriteString(out, evaled.Inspect())
 			io.WriteString(out, "\n")

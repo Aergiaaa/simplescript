@@ -7,72 +7,39 @@ import (
 )
 
 func TestNextToken(t *testing.T) {
-	inp := `=+(){},;`
-
-	tests := []struct {
-		expectedType    token.TokenType
-		expectedLiteral string
-	}{
-		{token.ASSIGN, "="},
-		{token.PLUS, "+"},
-		{token.LPAREN, "("},
-		{token.RPAREN, ")"},
-		{token.LBRACE, "{"},
-		{token.RBRACE, "}"},
-		{token.COMMA, ","},
-		{token.SEMICOLON, ";"},
-		{token.EOF, ""},
-	}
-
-	l := InitLexer(inp)
-	for i, tt := range tests {
-		tok := l.NextToken()
-
-		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - TokenType wrong. expected=%q, got=%q",
-				i, tt.expectedType, tok.Type)
-		}
-
-		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - Literal wrong. expected=%q, got=%q",
-				i, tt.expectedLiteral, tok.Literal)
-		}
-	}
-}
-
-func TestNextTokenIdent(t *testing.T) {
 	inp := `let five = 5;
-	let ten = 10;
+					let ten = 10;
 
-	let add = ft(x,y){
-		x + y;
-	};
+					let add = ft(x,y){
+						x + y;
+					};
 
-	let res = add(five, ten);
+					let res = add(five, ten);
 
-	!-/*5<>;
+					!-/*5<>;
 
-	true
-	false
-	if
-	else
-	return
+					true
+					false
+					if
+					else
+					return
 
-	!=
-	==
-	>=
-	<=
+					!=
+					==
+					>=
+					<=
 
-	"foo"
-	"bar foo"
+					"foo"
+					"bar foo"
 
-	[1,2];
+					[1,2];
 
-	{"foo": "bar"}
-	for {
-		break
-	}
-	
+					{"foo": "bar"}
+					for {
+						break
+					}
+					
+					macro(x, y) { x + y; };
 	 `
 
 	tests := []struct {
@@ -149,6 +116,19 @@ func TestNextTokenIdent(t *testing.T) {
 		{token.LBRACE, "{"},
 		{token.BREAK, "break"},
 		{token.RBRACE, "}"},
+		{token.MACRO, "macro"},
+		{token.LPAREN, "("},
+		{token.IDENT, "x"},
+		{token.COMMA, ","},
+		{token.IDENT, "y"},
+		{token.RPAREN, ")"},
+		{token.LBRACE, "{"},
+		{token.IDENT, "x"},
+		{token.PLUS, "+"},
+		{token.IDENT, "y"},
+		{token.SEMICOLON, ";"},
+		{token.RBRACE, "}"},
+		{token.SEMICOLON, ";"},
 		{token.EOF, ""},
 	}
 
