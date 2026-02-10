@@ -154,6 +154,8 @@ func (p *Parser) parseStatement() ast.Statement {
 	switch p.currToken.Type {
 	case token.LET:
 		return p.parseLetStatement()
+	case token.CONST:
+		return p.parseConstStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
 	case token.BREAK:
@@ -179,6 +181,36 @@ func (p *Parser) parseExpressionStatement() ast.Statement {
 
 func (p *Parser) parseLetStatement() ast.Statement {
 	stmt := &ast.LetStatement{
+		Token: p.currToken,
+	}
+
+	if !p.expectPeek(token.IDENT) {
+		return nil
+	}
+	p.nextToken()
+
+	stmt.Name = &ast.Identifier{
+		Token: p.currToken,
+		Value: p.currToken.Literal,
+	}
+
+	if !p.expectPeek(token.ASSIGN) {
+		return nil
+	}
+	p.nextToken()
+
+	p.nextToken()
+	stmt.Value = p.parseExpression(LOWEST)
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseConstStatement() ast.Statement {
+	stmt := &ast.ConstStatement{
 		Token: p.currToken,
 	}
 

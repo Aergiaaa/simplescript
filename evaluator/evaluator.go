@@ -29,6 +29,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return newError("identifier not found: %s", node.Name.Value)
 		}
 
+		if env.IsConst(node.Name.Value) {
+			return newError("constant variable cannot be mutated: %s", node.Name.Value)
+		}
+
 		env.Set(node.Name.Value, val)
 		return val
 	case *ast.LetStatement:
@@ -37,11 +41,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 			return val
 		}
 		env.Set(node.Name.Value, val)
+	case *ast.ConstStatement:
+		val := Eval(node.Value, env)
+		if isError(val) {
+			return val
+		}
+
+		env.SetConst(node.Name.Value, val)
 	case *ast.FunctionLiteral:
 		return &object.Function{
 			Params: node.Parameters,
-			Body:       node.Body,
-			Env:        env,
+			Body:   node.Body,
+			Env:    env,
 		}
 	case *ast.ArrayLiteral:
 		elems := evalExprs(node.Elems, env)

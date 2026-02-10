@@ -49,6 +49,7 @@ const (
 	// keyword
 	FUNC   = "FUNCTION"
 	LET    = "LET"
+	CONST  = "CONST"
 	TRUE   = "TRUE"
 	FALSE  = "FALSE"
 	IF     = "IF"
@@ -84,6 +85,7 @@ func LookupIdent(ident string) TokenType {
 var keyword = map[string]TokenType{
 	"ft":     FUNC,
 	"let":    LET,
+	"const":  CONST,
 	"true":   TRUE,
 	"false":  FALSE,
 	"if":     IF,
