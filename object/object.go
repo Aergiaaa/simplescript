@@ -16,6 +16,7 @@ const (
 	ERR_OBJ     = "ERROR"
 	FUNC_OBJ    = "FUNCTION"
 	RET_VAL_OBJ = "RETURN_VALUE"
+	BREAK_OBJ   = "BREAK"
 	INTEGER_OBJ = "INTEGER"
 	BOOL_OBJ    = "BOOL"
 	STRING_OBJ  = "STRING"
@@ -83,6 +84,11 @@ type ReturnValue struct {
 
 func (rv *ReturnValue) Inspect() string  { return rv.Value.Inspect() }
 func (rv *ReturnValue) Type() ObjectType { return RET_VAL_OBJ }
+
+type Break struct{}
+
+func (b *Break) Inspect() string  { return "break" }
+func (b *Break) Type() ObjectType { return BREAK_OBJ }
 
 type Hash struct {
 	Pairs map[HashKey]HashPair

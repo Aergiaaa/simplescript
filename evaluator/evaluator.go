@@ -19,6 +19,18 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return evalProgram(node, env)
 	case *ast.Identifier:
 		return evalIdentifier(node, env)
+	case *ast.AssignmentExpression:
+		val := Eval(node.Val, env)
+		if isError(val) {
+			return val
+		}
+
+		if _, ok := env.Get(node.Name.Value); !ok {
+			return newError("identifier not found: %s", node.Name.Value)
+		}
+
+		env.Set(node.Name.Value, val)
+		return val
 	case *ast.LetStatement:
 		val := Eval(node.Value, env)
 		if isError(val) {
@@ -69,6 +81,10 @@ func Eval(node ast.Node, env *object.Environment) object.Object {
 		return applyFunc(f, args)
 	case *ast.IfExpression:
 		return evalIfExpr(node, env)
+	case *ast.ForExpression:
+		return evalForExpr(node, env)
+	case *ast.BreakStatement:
+		return &object.Break{}
 	case *ast.ReturnStatement:
 		val := Eval(node.ReturnValue, env)
 		if isError(val) {
@@ -261,6 +277,52 @@ func evalArrayIndexExpr(arr, index object.Object) object.Object {
 	return arrObj.Elems[i]
 }
 
+func evalForExpr(fe *ast.ForExpression, env *object.Environment) object.Object {
+	if fe.Condition == nil {
+		for {
+			res := Eval(fe.Body, env)
+			if res != nil {
+				rt := res.Type()
+				if rt == object.ERR_OBJ || rt == object.RET_VAL_OBJ {
+					return res
+				}
+
+				if rt == object.BREAK_OBJ {
+					return NULL
+				}
+			}
+		}
+	}
+
+	condition := Eval(fe.Condition, env)
+	if isError(condition) {
+		return condition
+	}
+
+	// TODO: how to loop over truth condition
+	for isTruthy(condition) {
+		// exec body
+		res := Eval(fe.Body, env)
+		if res != nil {
+			rt := res.Type()
+			if rt == object.ERR_OBJ || rt == object.RET_VAL_OBJ {
+				return res
+			}
+
+			if rt == object.BREAK_OBJ {
+				return NULL
+			}
+		}
+
+		condition = Eval(fe.Condition, env)
+		if isError(condition) {
+			return condition
+		}
+	}
+
+	return NULL
+}
+
 func evalIfExpr(ie *ast.IfExpression, env *object.Environment) object.Object {
 	condition := Eval(ie.Condition, env)
 	if isError(condition) {
@@ -298,7 +360,7 @@ func evalBlockStatements(block *ast.BlockStatement, env *object.Environment) (re
 
 		if res != nil {
 			rt := res.Type()
-			if rt == object.RET_VAL_OBJ || rt == object.ERR_OBJ {
+			if rt == object.RET_VAL_OBJ || rt == object.ERR_OBJ || rt == object.BREAK_OBJ {
 				return res
 			}
 		}

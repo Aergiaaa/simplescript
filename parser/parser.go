@@ -15,6 +15,7 @@ type Hierarchy int
 const (
 	_ Hierarchy = iota
 	LOWEST
+	ASSIGN           //X=Y
 	EQUALS           //==
 	LESSGREATEREQUAL // <= >=
 	LESSGREATER      // < >
@@ -38,6 +39,7 @@ var hierarchy = map[token.TokenType]Hierarchy{
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
 	token.LBRACKET: INDEX,
+	token.ASSIGN:   ASSIGN,
 }
 
 type (
@@ -65,6 +67,7 @@ func InitParser(l *lexer.Lexer) *Parser {
 
 	// register all the function
 	p.prefixParseFns = make(map[token.TokenType]prefixParseFn)
+	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 
 	p.registerPrefix(token.IDENT, p.parseIdentifier)
 
@@ -81,13 +84,13 @@ func InitParser(l *lexer.Lexer) *Parser {
 
 	p.registerPrefix(token.IF, p.parseIFExpression)
 
+	p.registerPrefix(token.FOR, p.parseForExpression)
+
 	p.registerPrefix(token.FUNC, p.parseFuncLiteral)
 
 	p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
 
 	p.registerPrefix(token.LBRACE, p.parseHashLiteral)
-
-	p.infixParseFns = make(map[token.TokenType]infixParseFn)
 
 	p.registerInfix(token.PLUS, p.parseInfixExpression)
 	p.registerInfix(token.MINUS, p.parseInfixExpression)
@@ -101,6 +104,8 @@ func InitParser(l *lexer.Lexer) *Parser {
 	p.registerInfix(token.ASTERISK, p.parseInfixExpression)
 
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
+
+	p.registerInfix(token.ASSIGN, p.parseAssignExpression)
 
 	p.registerInfix(token.LBRACKET, p.parseIndexExpression)
 
@@ -149,6 +154,8 @@ func (p *Parser) parseStatement() ast.Statement {
 		return p.parseLetStatement()
 	case token.RETURN:
 		return p.parseReturnStatement()
+	case token.BREAK:
+		return p.parseBreakStatement()
 	default:
 		return p.parseExpressionStatement()
 	}
@@ -206,6 +213,18 @@ func (p *Parser) parseReturnStatement() ast.Statement {
 
 	if !p.currTokenIs(token.SEMICOLON) {
 		stmt.ReturnValue = p.parseExpression(LOWEST)
+	}
+
+	if p.peekTokenIs(token.SEMICOLON) {
+		p.nextToken()
+	}
+
+	return stmt
+}
+
+func (p *Parser) parseBreakStatement() ast.Statement {
+	stmt := &ast.BreakStatement{
+		Token: p.currToken,
 	}
 
 	if p.peekTokenIs(token.SEMICOLON) {
@@ -362,6 +381,35 @@ func (p *Parser) parseFuncParams() []*ast.Identifier {
 	return idens
 }
 
+func (p *Parser) parseForExpression() ast.Expression {
+	expr := &ast.ForExpression{
+		Token: p.currToken,
+	}
+
+	if !p.expectPeek(token.LPAREN) {
+		return nil
+	}
+	p.nextToken()
+
+	if !p.expectPeek(token.RPAREN) {
+		p.nextToken()
+		expr.Condition = p.parseExpression(LOWEST)
+	}
+
+	if !p.expectPeek(token.RPAREN) {
+		return nil
+	}
+	p.nextToken()
+	if !p.expectPeek(token.LBRACE) {
+		return nil
+	}
+	p.nextToken()
+
+	expr.Body = p.parseBlockStatement()
+
+	return expr
+}
+
 func (p *Parser) parseIFExpression() ast.Expression {
 	expr := &ast.IfExpression{
 		Token: p.currToken,
@@ -428,6 +476,25 @@ func (p *Parser) parseGroupedExpression() ast.Expression {
 		return nil
 	}
 	p.nextToken()
+
+	return expr
+}
+
+func (p *Parser) parseAssignExpression(left ast.Expression) ast.Expression {
+	ident, ok := left.(*ast.Identifier)
+	if !ok {
+		p.errors = append(p.errors,
+			fmt.Sprintf("expected identifier, got=%T", left))
+		return nil
+	}
+
+	expr := &ast.AssignmentExpression{
+		Token: p.currToken,
+		Name:  ident,
+	}
+
+	p.nextToken()
+	expr.Val = p.parseExpression(LOWEST)
 
 	return expr
 }

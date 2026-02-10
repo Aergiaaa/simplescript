@@ -86,6 +86,25 @@ func (ls *LetStatement) String() string {
 func (ls *LetStatement) statementNode()       {}
 func (ls *LetStatement) TokenLiteral() string { return ls.Token.Literal }
 
+type AssignmentExpression struct {
+	Token token.Token // `=`
+	Name  *Identifier
+	Val   Expression
+}
+
+func (ae *AssignmentExpression) expressionNode()      {}
+func (ae *AssignmentExpression) TokenLiteral() string { return ae.Token.Literal }
+func (ae *AssignmentExpression) String() string {
+	var output bytes.Buffer
+	output.WriteString(ae.Name.String())
+	output.WriteString(" = ")
+	if ae.Val != nil {
+		output.WriteString(ae.Val.String())
+	}
+
+	return output.String()
+}
+
 type ReturnStatement struct {
 	Token       token.Token // should always be token.RETURN
 	ReturnValue Expression
@@ -107,6 +126,35 @@ func (rs *ReturnStatement) String() string {
 
 func (rs *ReturnStatement) statementNode()       {}
 func (rs *ReturnStatement) TokenLiteral() string { return rs.Token.Literal }
+
+type BreakStatement struct {
+	Token token.Token // `break`
+}
+
+func (bs *BreakStatement) statementNode()       {}
+func (bs *BreakStatement) TokenLiteral() string { return bs.Token.Literal }
+func (bs *BreakStatement) String() string       { return "break" }
+
+type ForExpression struct {
+	Token     token.Token // `for`
+	Condition Expression
+	Body      *BlockStatement
+}
+
+func (fe *ForExpression) expressionNode()      {}
+func (fe *ForExpression) TokenLiteral() string { return fe.Token.Literal }
+func (fe *ForExpression) String() string {
+	var output bytes.Buffer
+
+	output.WriteString("for")
+	if fe.Condition != nil {
+		output.WriteString(fe.Condition.String())
+	}
+	output.WriteString(" ")
+	output.WriteString(fe.Body.String())
+
+	return output.String()
+}
 
 type IfExpression struct {
 	Token       token.Token

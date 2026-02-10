@@ -69,6 +69,10 @@ func TestNextTokenIdent(t *testing.T) {
 	[1,2];
 
 	{"foo": "bar"}
+	for {
+		break
+	}
+	
 	 `
 
 	tests := []struct {
@@ -140,6 +144,10 @@ func TestNextTokenIdent(t *testing.T) {
 		{token.STRING, "foo"},
 		{token.COLON, ":"},
 		{token.STRING, "bar"},
+		{token.RBRACE, "}"},
+		{token.FOR, "for"},
+		{token.LBRACE, "{"},
+		{token.BREAK, "break"},
 		{token.RBRACE, "}"},
 		{token.EOF, ""},
 	}

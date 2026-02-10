@@ -8,6 +8,63 @@ import (
 	"github.com/Aergiaaa/simplescript/lexer"
 )
 
+func TestForLoop(t *testing.T) {
+	input := `
+	for (x < 5) {
+		x = x+1;
+	}
+	`
+
+	l := lexer.InitLexer(input)
+	p := InitParser(l)
+	program := p.Parse()
+	checkParserErrors(t, p)
+
+	if len(program.Statements) != 1 {
+		t.Fatalf("program statement doesnt contain 1 statement, got=%d", len(program.Statements))
+	}
+
+	stmt, ok := program.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("program.Statements[0] is not ast.ExpressionStatement. got=%T",
+			program.Statements[0])
+	}
+
+	forExpr, ok := stmt.Expression.(*ast.ForExpression)
+	if !ok {
+		t.Fatalf("stmt.Expression is not ast.ForExpression. got=%T", stmt.Expression)
+	}
+
+	if !testInfixExpression(t, forExpr.Condition, "<", "x", 5) {
+		return
+	}
+
+	if len(forExpr.Body.Statements) != 1 {
+		t.Fatalf("forExpr.Body.Statements has not 1 statement. got=%d",
+			len(forExpr.Body.Statements))
+	}
+
+	bodyStmt, ok := forExpr.Body.Statements[0].(*ast.ExpressionStatement)
+	if !ok {
+		t.Fatalf("for body statement is not ast.ExpressionStatement. got=%T",
+			forExpr.Body.Statements[0])
+	}
+
+	assignExpr, ok := bodyStmt.Expression.(*ast.AssignmentExpression)
+	if !ok {
+		t.Fatalf("body expression is not ast.AssignmentExpression. got=%T",
+			bodyStmt.Expression)
+	}
+
+	if !testIdentifier(t, assignExpr.Name, "x") {
+		return
+	}
+
+	if !testInfixExpression(t, assignExpr.Val, "+", "x", 1) {
+		return
+	}
+}
+
 func TestParsingHashLiteralsWithExpressions(t *testing.T) {
 	input := `{"one": 0 + 1, "two": 10 - 8, "three": 15 / 5}`
 
