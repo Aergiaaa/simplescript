@@ -2,6 +2,11 @@ package lexer
 
 import "github.com/Aergiaaa/simplescript/token"
 
+/*
+Lexer in a nutshell is an algorithm that
+convert an input to a list of token
+(tokenizer)
+*/
 type Lexer struct {
 	input        string
 	position     int
@@ -121,6 +126,7 @@ func (l *Lexer) NextToken() token.Token {
 			t.Literal = l.readNum()
 			return t
 		}
+
 		t = makeToken(token.ILLEGAL, l.char)
 	}
 

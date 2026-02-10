@@ -17,13 +17,19 @@ const (
 	ASTERISK = "*"
 	SLASH    = "/"
 
-	EQ  = "=="
+	// Equal
+	EQ = "=="
+	// Not Equal
 	NEQ = "!="
 
+	// Less Than
 	LT = "<"
+	// Greater Than
 	GT = ">"
 
+	// Less Than Equal
 	LTE = "<="
+	// Greater Than Equal
 	GTE = ">="
 
 	// delimiter
