@@ -43,7 +43,7 @@ idiot run script.simp
 * Booleans : true, false
 * Strings  : "Hello World!"
 * Arrays   : [1,2,3]
-* Hashmaps : {"key":"value",six:"seven"}
+* Hashmaps : {6:"seven"}
 
 ### Variables
 
