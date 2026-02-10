@@ -127,13 +127,13 @@ make run
 
 ## Project Structure
 
-lexer/      - Tokenization
-token/      - Token definitions
-ast/        - Abstract syntax tree
-parser/     - Parser implementation
-object/     - Object system and environment
-evaluator/  - Tree-walking evaluator
-repl/       - Read-eval-print loop
+* lexer/      - Tokenization 
+* token/      - Token definitions
+* ast/        - Abstract syntax tree
+* parser/     - Parser implementation
+* object/     - Object system and environment
+* evaluator/  - Tree-walking evaluator
+* repl/       - Read-eval-print loop
 
 
 
