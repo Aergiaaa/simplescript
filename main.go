@@ -32,8 +32,8 @@ func main() {
 		input := string(content)
 
 		env := object.InitEnv()
-		l := lexer.InitLexer(input)
-		p := parser.InitParser(l)
+		l := lexer.Init(input)
+		p := parser.Init(l)
 		program := p.Parse()
 
 		if len(p.Errors()) != 0 {

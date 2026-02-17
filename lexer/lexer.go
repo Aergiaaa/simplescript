@@ -14,7 +14,7 @@ type Lexer struct {
 	char         byte
 }
 
-func InitLexer(s string) *Lexer {
+func Init(s string) *Lexer {
 	l := &Lexer{input: s}
 	l.readChar()
 	return l

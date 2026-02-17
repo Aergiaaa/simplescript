@@ -530,8 +530,8 @@ func TestEvalIntegerExpression(t *testing.T) {
 }
 
 func testEval(input string) object.Object {
-	l := lexer.InitLexer(input)
-	p := parser.InitParser(l)
+	l := lexer.Init(input)
+	p := parser.Init(l)
 	program := p.Parse()
 
 	if len(p.Errors()) > 0 {
@@ -598,7 +598,7 @@ func testNullObject(t *testing.T, obj object.Object) bool {
 }
 
 func testParseProgram(input string) *ast.Program {
-	l := lexer.InitLexer(input)
-	p := parser.InitParser(l)
+	l := lexer.Init(input)
+	p := parser.Init(l)
 	return p.Parse()
 }

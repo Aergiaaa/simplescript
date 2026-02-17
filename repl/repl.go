@@ -6,20 +6,32 @@ import (
 	"io"
 	"strings"
 
+	"github.com/Aergiaaa/simplescript/ast"
+	"github.com/Aergiaaa/simplescript/compiler"
 	"github.com/Aergiaaa/simplescript/evaluator"
 	"github.com/Aergiaaa/simplescript/lexer"
 	"github.com/Aergiaaa/simplescript/object"
 	"github.com/Aergiaaa/simplescript/parser"
+	"github.com/Aergiaaa/simplescript/vm"
 )
 
 const PROMPT = ">>"
 
-func Start(in io.Reader, out io.Writer) {
+type COMPILE_MODE bool
+
+const (
+	COMPILE   COMPILE_MODE = true
+	INTERPRET COMPILE_MODE = false
+)
+
+func Start(in io.Reader, out io.Writer, mode COMPILE_MODE) {
 	buffer := bufio.NewScanner(in)
 	env := object.InitEnv()
 	macroEnv := object.InitEnv()
 
 	for {
+		var err error
+
 		fmt.Printf(PROMPT)
 
 		readed := buffer.Scan()
@@ -40,27 +52,56 @@ func Start(in io.Reader, out io.Writer) {
 			line += "\n" + buffer.Text()
 		}
 
-		l := lexer.InitLexer(line)
-		p := parser.InitParser(l)
+		// init
+		l := lexer.Init(line)
+		p := parser.Init(l)
 
+		// parsing program
 		program := p.Parse()
 		if len(p.Errors()) != 0 {
 			printParseError(out, p.Errors())
 			continue
 		}
 
-		evaluator.DefineMacros(program, macroEnv)
-		expanded, err := evaluator.ExpandMacros(program, macroEnv)
-		if err != nil {
-			io.WriteString(out, err.Error())
+		var expanded ast.Node
+		if mode == INTERPRET {
+			// evaluate macros
+			evaluator.DefineMacros(program, macroEnv)
+			expanded, err = evaluator.ExpandMacros(program, macroEnv)
+			if err != nil {
+				io.WriteString(out, err.Error())
+				io.WriteString(out, "\n")
+			}
+			// evaluating
+			evaled := evaluator.Eval(expanded, env)
+			if evaled != nil {
+				// io.WriteString(out, evaled.Inspect())
+				// io.WriteString(out, "\n")
+			}
+		}
+
+		if mode == COMPILE {
+			// init compiler
+			comp := compiler.Init()
+			err = comp.Compile(program)
+			if err != nil {
+				fmt.Fprintf(out, "compilation failed:\n %s\n", err)
+				continue
+			}
+
+			// init vm
+			machine := vm.Init(comp.Bytecode())
+			err = machine.Run()
+			if err != nil {
+				fmt.Fprintf(out, "failed executing bytecode:\n %s\n", err)
+				continue
+			}
+
+			lastPop := machine.LastPoppedStackElem()
+			io.WriteString(out, lastPop.Inspect())
 			io.WriteString(out, "\n")
 		}
 
-		evaled := evaluator.Eval(expanded, env)
-		if evaled != nil {
-			io.WriteString(out, evaled.Inspect())
-			io.WriteString(out, "\n")
-		}
 	}
 }
 
