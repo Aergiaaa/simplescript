@@ -24,6 +24,13 @@ const (
 	INTERPRET COMPILE_MODE = false
 )
 
+func (cm COMPILE_MODE) String() string {
+	if cm {
+		return "COMPILE"
+	}
+	return "INTERPRET"
+}
+
 func Start(in io.Reader, out io.Writer, mode COMPILE_MODE) {
 	buffer := bufio.NewScanner(in)
 	env := object.InitEnv()

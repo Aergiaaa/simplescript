@@ -15,14 +15,12 @@ import (
 
 func main() {
 
+	// default `idiot run <script.simp>`
 	if len(os.Args) >= 3 && os.Args[1] == "run" {
 		readFile()
 	}
-	user, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
 
+	// repl mode
 	var mode repl.COMPILE_MODE = repl.COMPILE
 	if os.Args[1] == "i" || os.Args[1] == "c" {
 		switch os.Args[1] {
@@ -33,7 +31,13 @@ func main() {
 		}
 	}
 
+	user, err := user.Current()
+	if err != nil {
+		panic(err)
+	}
 	fmt.Printf("Hello %s! welcome to idiotic stupid language!\n", user.Username)
+	fmt.Printf("MODE: %s\n", mode.String())
+
 	repl.Start(os.Stdin, os.Stdout, mode)
 }
 
